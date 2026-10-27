@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des étudiants UNCHK</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header class="header">
+        <button id="theme-toggle" class="btn-theme" title="Changer de mode"><i class="fa-solid fa-moon"></i></button>
+        <div class="header-content">
+            <span class="espace">ESPACE ADMINISTRATION</span>
+            <h1>Gestion des étudiants UNCHK</h1>
+            <p>Gérez les inscriptions et suivez les résultats.</p>
+        </div>
+        <div class="header-icon">
+            <i class="fa-solid fa-graduation-cap"></i>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Statistiques -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-label">Total étudiants</span>
+                <span class="stat-value" id="total-students">9</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Moyenne générale</span>
+                <span class="stat-value" id="general-average">13,83/20</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Étudiants admis</span>
+                <span class="stat-value" id="total-admis">7</span>
+            </div>
+        </section>
+
+        <!-- Statistiques Graphiques -->
+        <section class="card chart-card">
+            <h2>Statistiques Graphiques</h2>
+            <div class="chart-container" style="position: relative; height:200px; width:100%">
+                <canvas id="statsChart"></canvas>
+            </div>
+        </section>
+
+        <!-- Formulaire d'ajout / modification -->
+        <section class="card form-card">
+            <h2 id="form-title">Ajouter un étudiant</h2>
+            <form id="student-form">
+                <input type="hidden" id="student-index" value="">
+                <div class="form-row">
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label for="nom">Nom Complet</label>
+                        <input type="text" id="nom" placeholder="Ex: khady Oumar Diallo" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="email">Adresse e-mail</label>
+                        <input type="email" id="email" placeholder="exemple@domaine.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="classe">Classe</label>
+                        <input type="text" id="classe" placeholder="Ex: Master 1" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="note">Note sur 20</label>
+                        <input type="number" id="note" step="0.25" min="0" max="20" placeholder="Ex: 20" required>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" id="submit-btn" class="btn btn-blue">Ajouter l'étudiant</button>
+                    <button type="button" id="cancel-btn" class="btn btn-secondary" style="display: none;">Annuler</button>
+                </div>
+                <p id="error-message" class="error-msg"></p>
+            </form>
+        </section>
+
+        <!-- Barre de recherche, filtres et CSV -->
+        <div class="options-bar">
+            <div class="filters-group">
+                <div class="search-box">
+                    <i class="fa-solid fa-search"></i>
+                    <input type="text" id="search-input" placeholder="Rechercher un étudiant....">
+                </div>
+                <select id="filter-classe">
+                    <option value="">Toutes les classes</option>
+                    <option value="Master 1">Master 1</option>
+                    <option value="Master 2">Master 2</option>
+                    <option value="L1 Informatique">L1 Informatique</option>
+                    <option value="L2 Informatique">L2 Informatique</option>
+                    <option value="L3 Informatique">L3 Informatique</option>
+                </select>
+                <select id="sort-option">
+                    <option value="">Trier par...</option>
+                    <option value="nomAsc">Nom (A-Z)</option>
+                    <option value="noteDesc">Note (Décroissante)</option>
+                    <option value="noteAsc">Note (Croissante)</option>
+                </select>
+            </div>
+            <div class="extra-actions">
+                <button type="button" id="export-csv" class="btn-extra"><i class="fa-solid fa-file-arrow-down"></i> Export CSV</button>
+                <label for="import-csv" class="btn-extra file-label"><i class="fa-solid fa-file-arrow-up"></i> Import CSV</label>
+                <input type="file" id="import-csv" accept=".csv" style="display: none;">
+            </div>
+        </div>
+
+        <!-- Liste des étudiants -->
+        <section class="card table-card">
+            <div class="table-header-flex">
+                <div>
+                    <h2>Liste des étudiants</h2>
+                    <p class="table-sub">Consultez et gérez les inscriptions.</p>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>NOM COMPLET</th>
+                            <th>E-MAIL</th>
+                            <th>CLASSE</th>
+                            <th>NOTE</th>
+                            <th>RESULTAT</th>
+                            <th>ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="students-tbody">
+                        <tr data-id="1">
+                            <td><strong>Youssoupha Kanoute</strong></td>
+                            <td>youssoupha.kanoute@example.com</td>
+                            <td>Master 1</td>
+                            <td>20,00/20</td>
+                            <td><span class="badge admis">Admis</span></td>
+                            <td>
+                                <button type="button" class="btn-action-edit" onclick="editStudent(1)">Modifier</button>
+                                <button type="button" class="btn-action-delete" onclick="promptDelete(1)">Supprimer</button>
+                            </td>
+                        </tr>
+                        <tr data-id="2">
+                            <td><strong>Ndeye Merry Diop</strong></td>
+                            <td>ndeye.merry.diop@example.com</td>
+                            <td>L2 Informatique</td>
+                            <td>14,50/20</td>
+                            <td><span class="badge admis">Admis</span></td>
+                            <td>
+                                <button type="button" class="btn-action-edit" onclick="editStudent(2)">Modifier</button>
+                                <button type="button" class="btn-action-delete" onclick="promptDelete(2)">Supprimer</button>
+                            </td>
+                        </tr>
+                        <tr data-id="3">
+                            <td><strong>Ousmane Djiboune</strong></td>
+                            <td>ousmane.djiboune@example.com</td>
+                            <td>Master 1</td>
+                            <td>16,00/20</td>
+                            <td><span class="badge admis">Admis</span></td>
+                            <td>
+                                <button type="button" class="btn-action-edit" onclick="editStudent(3)">Modifier</button>
+                                <button type="button" class="btn-action-delete" onclick="promptDelete(3)">Supprimer</button>
+                            </td>
+                        </tr>
+                        <tr data-id="4">
+                            <td><strong>Mouhamed Mbaye</strong></td>
+                            <td>mouhamed.mbaye@example.com</td>
+                            <td>Master 2</td>
+                            <td>16,00/20</td>
+                            <td><span class="badge admis">Admis</span></td>
+                            <td>
+                                <button type="button" class="btn-action-edit" onclick="editStudent(4)">Modifier</button>
+                                <button type="button" class="btn-action-delete" onclick="promptDelete(4)">Supprimer</button>
+                            </td>
+                        </tr>
+                        <tr data-id="5">
+                            <td><strong>Awa Ndiaye</strong></td>
+                            <td>awa.ndiaye@example.com</td>
+                            <td>L1 Informatique</td>
+                            <td>12,00/20</td>
+                            <td><span class="badge admis">Admis</span></td>
+                            <td>
+                                <button type="button" class="btn-action-edit" onclick="editStudent(5)">Modifier</button>
+                                <button type="button" class="btn-action-delete" onclick="promptDelete(5)">Supprimer</button>
+                            </td>
+                        </tr>
+                        <tr data-id="6">
+                            <td><strong>Mbene Diop</strong></td>
+                            <td>mbene.diop@example.com</td>
+                            <td>L3 Informatique</td>
+                            <td>12,00/20</td>
+                            <td><span class="badge admis">Admis</span></td>
+                            <td>
+                                <button type="button" class="btn-action-edit" onclick="editStudent(6)">Modifier</button>
+                                <button type="button" class="btn-action-delete" onclick="promptDelete(6)">Supprimer</button>
+                            </td>
+                        </tr>
+                        <tr data-id="7">
+                            <td><strong>Gabriel Saint</strong></td>
+                            <td>saint.gabriel@example.com</td>
+                            <td>L1 Informatique</td>
+                            <td>7,50/20</td>
+                            <td><span class="badge echec">Échec</span></td>
+                            <td>
+                                <button type="button" class="btn-action-edit" onclick="editStudent(7)">Modifier</button>
+                                <button type="button" class="btn-action-delete" onclick="promptDelete(7)">Supprimer</button>
+                            </td>
+                        </tr>
+                        <tr data-id="8">
+                            <td><strong>Cheikh Fall</strong></td>
+                            <td>cheikh.fall@example.com</td>
+                            <td>L1 Informatique</td>
+                            <td>8,00/20</td>
+                            <td><span class="badge echec">Échec</span></td>
+                            <td>
+                                <button type="button" class="btn-action-edit" onclick="editStudent(8)">Modifier</button>
+                                <button type="button" class="btn-action-delete" onclick="promptDelete(8)">Supprimer</button>
+                            </td>
+                        </tr>
+                        <tr data-id="9">
+                            <td><strong>Fatou Sow</strong></td>
+                            <td>fatou.sow@example.com</td>
+                            <td>L2 Informatique</td>
+                            <td>17,50/20</td>
+                            <td><span class="badge admis">Admis</span></td>
+                            <td>
+                                <button type="button" class="btn-action-edit" onclick="editStudent(9)">Modifier</button>
+                                <button type="button" class="btn-action-delete" onclick="promptDelete(9)">Supprimer</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination-container" id="pagination-controls"></div>
+        </section>
+    </main>
+
+    <!-- Modale de confirmation de suppression -->
+    <div id="confirm-modal" class="modal">
+        <div class="modal-content confirm-content">
+            <h3>Confirmation de suppression</h3>
+            <p>Voulez-vous vraiment supprimer cet étudiant ?</p>
+            <div class="confirm-actions">
+                <button id="confirm-yes" class="btn btn-danger">Oui, supprimer</button>
+                <button id="confirm-no" class="btn btn-secondary">Annuler</button>
+            </div>
+        </div>
+    </div>
+<footer>
+    &copy; 2026 Groupe9
+</footer>
+    <script src="script.js"></script>
+</body>
+</html>
